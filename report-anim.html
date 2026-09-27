@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报告划线 · 双栏滚动 · 异步</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#050810;font-family:"Microsoft YaHei",sans-serif}
+  #stage{
+    position:absolute;left:50%;top:50%;
+    width:1280px;height:720px;transform-origin:center center;
+    background:radial-gradient(900px 600px at 82% -12%,rgba(56,189,248,.10),transparent 60%),#070b12;
+    overflow:hidden;
+  }
+  #header{
+    position:absolute;top:18px;left:30px;right:30px;
+    display:flex;justify-content:space-between;align-items:center;
+    color:rgba(255,255,255,.5);font-size:13px;letter-spacing:2px;
+    font-family:Consolas,monospace;
+    z-index:30;
+  }
+  #header .tag{
+    padding:4px 12px;border-radius:999px;
+    background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);
+    color:#38bdf8;font-weight:700;
+  }
+
+  #panels{
+    position:absolute;left:24px;right:24px;top:60px;bottom:50px;
+    display:flex;gap:20px;
+  }
+  .panel{
+    position:relative;flex:1;overflow:hidden;border-radius:10px;
+    background:#0b1018;
+    box-shadow:0 18px 46px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.07);
+  }
+
+  /* 缩略图列（加 opacity 过渡，放大时淡出） */
+  .reel{
+    position:absolute;left:50%;top:0;width:150px;
+    transform:translateX(-50%);
+    transition:transform 2.8s cubic-bezier(.5,.05,.15,1), opacity .35s ease;
+    z-index:5;
+  }
+  .thumb{
+    width:150px;height:195px;margin:6px 0;
+    background:#1a2233;border-radius:4px;
+    position:relative;overflow:hidden;
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .thumb img{width:100%;height:100%;display:block;object-fit:cover;opacity:0;transition:opacity .35s ease}
+  .thumb img.ready{opacity:1}
+  .thumb .pnum{
+    position:absolute;bottom:5px;right:8px;
+    font-size:11px;color:rgba(255,255,255,.5);
+    font-family:Georgia,serif;z-index:2;text-shadow:0 0 4px #000;
+  }
+  .thumb.lit{background:#f7f4ec;box-shadow:0 0 0 2px #e8355a,0 0 16px rgba(232,53,90,.75)}
+  .thumb.lit .pnum{color:#a29a88;text-shadow:none}
+
+  .zoom-layer{
+    position:absolute;inset:0;
+    opacity:0;pointer-events:none;
+    transition:opacity .5s ease;
+    z-index:10;
+    background:#0b1018;
+  }
+  .zoom-layer.show{opacity:1}
+
+  .panel .badge{
+    position:absolute;top:12px;left:14px;z-index:25;
+    padding:4px 12px;border-radius:999px;
+    font-size:12px;letter-spacing:1.5px;font-weight:700;
+    font-family:Consolas,monospace;
+    backdrop-filter:blur(6px);
+    opacity:0;
+    transition:opacity .4s ease;
+  }
+  .panel.show .badge{opacity:1}
+  .panel:nth-child(1) .badge{
+    background:rgba(56,189,248,.18);border:1px solid rgba(56,189,248,.45);color:#7dd3fc;
+  }
+  .panel:nth-child(2) .badge{
+    background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.45);color:#fcd34d;
+  }
+
+  .paper{
+    position:absolute;left:0;top:0;
+    background:#fff;border-radius:2px;
+    overflow:hidden;
+    transition:left 1s cubic-bezier(.6,0,.2,1), top 1s cubic-bezier(.6,0,.2,1), width 1s cubic-bezier(.6,0,.2,1), height 1s cubic-bezier(.6,0,.2,1);
+  }
+  .paper img{display:block;width:100%;height:100%}
+
+  .cn-overlay{
+    position:absolute;
+    background:transparent;
+    -webkit-backdrop-filter:blur(10px) saturate(1.15);
+    backdrop-filter:blur(10px) saturate(1.15);
+    color:#111;
+    font-weight:800;
+    padding:6px 14px;
+    border-radius:6px;
+    line-height:1.35;
+    letter-spacing:.3px;
+    text-shadow:0 0 7px rgba(255,254,247,.95), 0 0 3px rgba(255,254,247,.9);
+    z-index:10;
+    opacity:0;
+    transform:scale(.96);
+    clip-path:inset(0 100% 0 0);
+    transition:opacity .3s ease, transform .3s ease, clip-path .9s linear;
+    white-space:nowrap;
+    overflow:visible;
+  }
+  .cn-overlay.on{
+    opacity:1;
+    transform:scale(1);
+    clip-path:inset(0 0 0 0);
+  }
+
+  .stroke{
+    position:absolute;height:6px;
+    background:#e8355a;border-radius:3px;
+    box-shadow:0 0 14px rgba(232,53,90,.9);
+    width:0;
+    transition:width 1s cubic-bezier(.55,0,.2,1);
+    transform:rotate(-.6deg);
+    z-index:20;
+  }
+  .stroke.on{width:var(--w)}
+
+  #tip{
+    position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+    color:rgba(255,255,255,.4);font-size:12px;
+    font-family:Consolas,monospace;
+    padding:4px 14px;border-radius:999px;
+    background:rgba(7,11,18,.8);
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="header">
+    <span>英国 AI 安全研究所 · 事件报告 INC-2026-07-28-01</span>
+    
+  </div>
+  <div id="panels">
+    <section class="panel">
+      <div class="badge">第 4 页</div>
+      <div class="reel"></div>
+      <div class="zoom-layer"><div class="paper"></div></div>
+    </section>
+    <section class="panel">
+      <div class="badge">第 17 页</div>
+      <div class="reel"></div>
+      <div class="zoom-layer"><div class="paper"></div></div>
+    </section>
+  </div>
+  
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const PDF_FILE = 'report.pdf';
+  const STAGE_W = 1280, STAGE_H = 720;
+  const THUMB_W = 150, THUMB_H = 195, GAP = 12;
+
+  const SHOTS = [
+    {
+      page: 4,
+      keyword: 'deliberately disables developer-implemented cyber-classifiers',
+      cn: '测试方故意关掉了模型自带的安全过滤器。'
+    },
+    {
+      page: 17,
+      keyword: 'Had the agent been prevented from accessing the internet, this incident would not have occurred',
+      cn: '如果一开始不让 AI 上网，这起事件根本不会发生。'
+    }
+  ];
+
+  // 页面里已经没有 #tip 了；给个占位对象，避免报错分支写 textContent 时抛 null
+  const tip = document.getElementById('tip') || { textContent: '' };
+  const panels = [...document.querySelectorAll('.panel')];
+
+  let _pdf = null;
+  let thumbRenderToken = 0;
+
+  (async function () {
+    try {
+      const pdf = await pdfjsLib.getDocument(PDF_FILE).promise;
+      _pdf = pdf;
+      
+      setTimeout(() => runSequence(pdf), 300);
+    } catch (e) {
+      tip.textContent = '加载失败：请把 PDF 和这个 HTML 放同一文件夹';
+      console.error(e);
+    }
+  })();
+
+  window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'replay') return;
+    if (!_pdf) return;
+    resetAll();
+    setTimeout(() => runSequence(_pdf), 200);
+  });
+
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function resetAll(){
+    thumbRenderToken++;
+    panels.forEach(p => {
+      const r = p.querySelector('.reel');
+      // ★ 复位前必须先关掉过渡。
+      //   否则 translateY(0) 会被 2.8s 过渡"慢慢飘回去"，紧接着 runSequence 又把目标
+      //   设回原处，两下相互抵消 —— 表现就是缩略图完全没滚动。
+      r.style.transition = 'none';
+      r.innerHTML = '';
+      r.style.transform = 'translateX(-50%) translateY(0)';
+      r.style.opacity = '1';   // ★ 恢复缩略图列
+      void r.offsetWidth;      // 提交瞬时复位；之后再打开过渡才会有动画
+      r.style.transition = 'transform 2.8s cubic-bezier(.5,.05,.15,1), opacity .35s ease';
+
+      const zl = p.querySelector('.zoom-layer');
+      zl.classList.remove('show');
+      zl.querySelector('.paper').innerHTML = '';
+      p.classList.remove('show');
+    });
+  }
+
+  function canvasToImg(canvas){
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = canvas.toDataURL('image/png');
+    });
+  }
+
+  // 异步渲染缩略图：立刻返回，不阻塞滚动
+  async function renderThumbsAsync(pdf, reels, token){
+    const thumbs = reels.map(r => [...r.querySelectorAll('.thumb')]);
+    const scale = 0.3;
+    const focus = SHOTS.map(s => s.page);
+
+    const order = [];
+    for (let i = 1; i <= pdf.numPages; i++) order.push(i);
+    order.sort((a, b) => {
+      const da = Math.min(...focus.map(p => Math.abs(p - a)));
+      const db = Math.min(...focus.map(p => Math.abs(p - b)));
+      return da - db;
+    });
+
+    for (const n of order){
+      if (token !== thumbRenderToken) return;
+      try{
+        const page = await pdf.getPage(n);
+        const vp = page.getViewport({ scale });
+        const c = document.createElement('canvas');
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        if (token !== thumbRenderToken) return;
+        const url = c.toDataURL('image/png');
+
+        reels.forEach((r, i) => {
+          const t = thumbs[i][n - 1];
+          if (!t) return;
+          t.querySelectorAll('img').forEach(el => el.remove());
+          const img = document.createElement('img');
+          img.onload = () => img.classList.add('ready');
+          img.src = url;
+          t.insertBefore(img, t.firstChild);
+        });
+        await new Promise(r => requestAnimationFrame(r));
+      }catch(e){}
+    }
+  }
+
+  async function runSequence(pdf){
+    resetAll();
+    const myToken = thumbRenderToken;
+    await wait(150);
+
+    // 1. 每块面板建一条缩略图列（只有格子）
+    const reels = panels.map(p => {
+      const r = p.querySelector('.reel');
+      for (let i = 1; i <= pdf.numPages; i++){
+        const d = document.createElement('div');
+        d.className = 'thumb';
+        d.innerHTML = `<div class="pnum">${i}</div>`;
+        r.appendChild(d);
+      }
+      return r;
+    });
+
+    // 2. 缩略图异步补
+    renderThumbsAsync(pdf, reels, myToken);
+
+    // 3. 立即开始滚动
+    await new Promise(r => requestAnimationFrame(r));
+    await wait(120);
+
+    
+    reels.forEach((r, i) => {
+      const idx = SHOTS[i].page - 1;
+      const PH = panels[i].clientHeight;
+      const y = idx * (THUMB_H + GAP) + THUMB_H / 2 - PH / 2;
+      r.style.transform = `translateX(-50%) translateY(${-y}px)`;
+    });
+
+    await wait(3000);
+
+    // 4. 两边同时高亮目标页
+    reels.forEach((r, i) => {
+      const t = r.children[SHOTS[i].page - 1];
+      if (t) t.classList.add('lit');
+    });
+    await wait(500);
+
+    // 5. 两页同时渲染 + 算聚焦参数
+    const preps = await Promise.all(
+      SHOTS.map((shot, i) => prepareShot(pdf, shot, panels[i]))
+    );
+    const ok = preps.filter(p => p.ok);
+    if (!ok.length){
+      tip.textContent = '没找到关键词，请检查 SHOTS 配置';
+      return;
+    }
+
+    const sharedZ = Math.min(...ok.map(p => p.finalZ));
+    ok.forEach(p => { p.finalZ = sharedZ; });
+
+    // 6. 放大层淡入（同时淡出缩略图列）
+    preps.forEach(p => p.panel.querySelector('.zoom-layer').classList.add('show'));
+    preps.forEach(p => p.panel.classList.add('show'));
+    reels.forEach(r => { r.style.opacity = '0'; });   // ★ 缩略图列淡出
+    await wait(400);
+
+    // 7. 缩略态 → 整页（prepareShot 已锁死缩略态，这里直接起过渡）
+    void preps[0].paper.offsetWidth;
+    preps.forEach(p => placePaper(p, p.fullZ, p.W/2, p.H/2, true));
+    await wait(1150);
+
+    // 8. 整页 → 聚焦关键词
+    ok.forEach(p => placePaper(p, p.finalZ, p.cx, p.cy, true));
+    await wait(1400);
+
+    // 9. 两边同时"边画边译"
+    const lasts = ok.map(p => revealShot(p));
+    await wait(Math.max(...lasts) + 400);
+
+    
+  }
+
+  async function prepareShot(pdf, shot, panel){
+    const page = await pdf.getPage(shot.page);
+    const scale = 2.6;
+    const vp = page.getViewport({ scale });
+    const W = vp.width, H = vp.height;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    const img = await canvasToImg(canvas);
+
+    const paper = panel.querySelector('.paper');
+    paper.innerHTML = '';
+    paper.appendChild(img);
+
+    const PW = panel.clientWidth, PH = panel.clientHeight;
+    const st = {
+      ok: false, shot, panel, paper, W, H, PW, PH,
+      fullZ: Math.min((PW - 26)/W, (PH - 26)/H),
+      startZ: Math.min(150 / W, 195 / H),
+      finalZ: 1, cx: W/2, cy: H/2, found: []
+    };
+
+    // ★ 加入 DOM 后立刻锁死缩略态，避免第一帧闪成全屏
+    paper.style.transition = 'none';
+    paper.style.width  = (W * st.startZ) + 'px';
+    paper.style.height = (H * st.startZ) + 'px';
+    paper.style.left   = ((PW - W * st.startZ) / 2) + 'px';
+    paper.style.top    = ((PH - H * st.startZ) / 2) + 'px';
+
+    const tc = await page.getTextContent();
+    const found = locate(tc, vp, [shot.keyword]);
+    if (!found.length) return st;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    found.forEach(f => {
+      minX = Math.min(minX, f.x);
+      minY = Math.min(minY, f.y - 40);
+      maxX = Math.max(maxX, f.x + f.w);
+      maxY = Math.max(maxY, f.y + 50);
+    });
+    const padX = 80, padY = 60;
+    minX -= padX; maxX += padX;
+    minY -= padY; maxY += padY;
+
+    minX = Math.min(Math.max(minX, 0), W - 1);
+    maxX = Math.min(Math.max(maxX, minX + 1), W);
+    minY = Math.min(Math.max(minY, 0), H - 1);
+    maxY = Math.min(Math.max(maxY, minY + 1), H);
+
+    const cx = (minX + maxX)/2, cy = (minY + maxY)/2;
+    const boxW = maxX - minX, boxH = maxY - minY;
+    const areaZ = Math.min((PW*0.82)/boxW, (PH*0.42)/boxH);
+
+    let fz = Math.min(areaZ, st.fullZ * 8);
+    if (!isFinite(fz) || fz <= 0) fz = st.fullZ;
+    fz = Math.max(fz, st.fullZ);
+
+    Object.assign(st, { ok: true, found, cx, cy, finalZ: fz });
+    return st;
+  }
+
+  function placePaper(st, z, fx, fy, animate){
+    const { paper, W, H, PW, PH } = st;
+    paper.style.transition = animate
+      ? 'left 1s cubic-bezier(.6,0,.2,1), top 1s cubic-bezier(.6,0,.2,1), width 1s cubic-bezier(.6,0,.2,1), height 1s cubic-bezier(.6,0,.2,1)'
+      : 'none';
+    paper.style.width  = (W*z) + 'px';
+    paper.style.height = (H*z) + 'px';
+    paper.style.left   = (PW/2 - fx*z) + 'px';
+    paper.style.top    = (PH/2 - fy*z) + 'px';
+  }
+
+  function revealShot(st){
+    const { paper, shot, found, finalZ } = st;
+    const sX = finalZ, sY = finalZ;
+
+    const lineBox = found[0];
+    const lineH = (lineBox.h || 20) * sY;
+
+    const DRAW_MS = 1000, STAGGER = 400;
+    const totalMs = (found.length - 1) * STAGGER + DRAW_MS;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'cn-overlay';
+    overlay.textContent = shot.cn;
+
+    const fs = Math.max(13, lineH * 0.85);
+    overlay.style.fontSize = fs + 'px';
+    overlay.style.left = ((lineBox.x * sX) - 10) + 'px';
+    overlay.style.top  = ((lineBox.y * sY) - fs * 1.8) + 'px';
+    overlay.style.transition =
+      'opacity .25s ease, transform .25s ease, clip-path ' + totalMs + 'ms linear';
+    paper.appendChild(overlay);
+    void overlay.offsetWidth;
+    overlay.classList.add('on');
+
+    const sh = Math.max(3, lineH * 0.28);
+    found.forEach((f, i) => {
+      const s = document.createElement('div');
+      s.className = 'stroke';
+      s.style.height = sh + 'px';
+      s.style.left = (f.x * sX) + 'px';
+      s.style.top  = (f.y * sY + (6 - sh) / 2) + 'px';
+      s.style.setProperty('--w', (f.w * sX) + 'px');
+      s.style.transition = 'width ' + DRAW_MS + 'ms cubic-bezier(.55,0,.2,1)';
+      paper.appendChild(s);
+      void s.offsetWidth;
+      setTimeout(() => s.classList.add('on'), i * STAGGER);
+    });
+
+    return totalMs;
+  }
+
+  function escapeRe(s){
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function locate(tc, vp, phrases){
+    const items = tc.items;
+    const full = items.map(it => it.str).join('');
+
+    const geo = items.map(it => {
+      const t = pdfjsLib.Util.transform(vp.transform, it.transform);
+      return {
+        str: it.str,
+        x: t[4],
+        y: t[5],
+        w: it.width * vp.scale,
+        h: (it.height || 10) * vp.scale
+      };
+    });
+    const starts = [];
+    let acc = 0;
+    for (const g of geo){ starts.push(acc); acc += g.str.length; }
+
+    const out = [];
+    for (const phrase of phrases){
+      const re = new RegExp(phrase.trim().split(/\s+/).map(escapeRe).join('\\s*'), 'g');
+      let m;
+      while ((m = re.exec(full)) !== null){
+        if (!m[0].length){ re.lastIndex++; continue; }
+        const pos = m.index;
+        const endPos = pos + m[0].length;
+
+        const touched = [];
+        for (let i = 0; i < geo.length; i++){
+          const s = starts[i], e = s + geo[i].str.length;
+          if (e <= pos || s >= endPos) continue;
+          const a = Math.max(pos, s) - s;
+          const b = Math.min(endPos, e) - s;
+          const len = geo[i].str.length || 1;
+          touched.push({
+            x:  geo[i].x + (a / len) * geo[i].w,
+            x2: geo[i].x + (b / len) * geo[i].w,
+            y:  geo[i].y,
+            h:  geo[i].h
+          });
+        }
+
+        let run = null;
+        for (const t of touched){
+          if (run && Math.abs(t.y - run.y) <= 6){
+            run.x  = Math.min(run.x,  t.x);
+            run.x2 = Math.max(run.x2, t.x2);
+            run.h  = Math.max(run.h,  t.h);
+          } else {
+            if (run) out.push(run);
+            run = { x: t.x, x2: t.x2, y: t.y, h: t.h };
+          }
+        }
+        if (run) out.push(run);
+      }
+    }
+
+    return out.map(r => {
+      const w = r.x2 - r.x;
+      if (!isFinite(w) || w <= 0 || !isFinite(r.y)) return null;
+      return { x: r.x, y: r.y + r.h * 0.35, w: w, h: r.h };
+    }).filter(Boolean);
+  }
+
+  function fit(){
+    const s = Math.min(window.innerWidth/STAGE_W, window.innerHeight/STAGE_H);
+    document.getElementById('stage').style.transform =
+      `translate(-50%,-50%) scale(${s})`;
+  }
+  window.addEventListener('resize', fit);
+  fit();
+</script>
+</body>
+</html>

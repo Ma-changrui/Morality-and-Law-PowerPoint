@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 的两副面孔 · 时政述评</title>
+<style>
+:root{
+  --bg:#070b12;
+  --panel:rgba(255,255,255,.045);
+  --line:rgba(255,255,255,.10);
+  --txt:#e9eff8;
+  --dim:#8593a8;
+  --cyan:#38bdf8;
+  --amber:#fbbf24;
+  --rose:#fb7185;
+  --green:#34d399;
+  --violet:#a78bfa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{
+  font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif;
+  color:var(--txt);-webkit-font-smoothing:antialiased;
+}
+#stage{
+  position:absolute;left:50%;top:50%;
+  width:1280px;height:720px;transform-origin:center center;
+  background:
+    radial-gradient(900px 600px at 82% -12%,rgba(56,189,248,.12),transparent 60%),
+    radial-gradient(700px 520px at 8% 108%,rgba(167,139,250,.10),transparent 62%),
+    var(--bg);
+  overflow:hidden;
+}
+.slide{
+  position:absolute;inset:0;padding:64px 80px;
+  display:flex;flex-direction:column;
+  opacity:0;transform:translateY(14px);
+  transition:opacity .42s ease,transform .42s ease;
+  pointer-events:none;
+}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.center{justify-content:center}
+
+.kicker{font-size:15px;letter-spacing:3px;color:var(--cyan);font-weight:700;margin-bottom:16px}
+.kicker.warn{color:var(--amber)}
+.kicker.rose{color:var(--rose)}
+.kicker.green{color:var(--green)}
+
+h1{font-size:70px;font-weight:800;line-height:1.14;letter-spacing:-1px}
+h2{font-size:44px;font-weight:800;line-height:1.2;letter-spacing:-.5px}
+.lead{font-size:21px;color:var(--dim);margin-top:18px;line-height:1.7}
+
+.bignum{
+  font-size:132px;font-weight:900;line-height:1;letter-spacing:-5px;
+  background:linear-gradient(180deg,#fff,#7dd3fc);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.unit{font-size:26px;font-weight:700;color:var(--dim);margin-left:10px;letter-spacing:0}
+
+.grid{display:grid;gap:18px;margin-top:26px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 24px}
+.card .n{font-size:40px;font-weight:900;letter-spacing:-1px}
+.card .t{font-size:19px;font-weight:700;margin-top:8px}
+.card .d{font-size:15px;color:var(--dim);margin-top:8px;line-height:1.6}
+.card.cy .n{color:var(--cyan)}
+.card.am .n{color:var(--amber)}
+.card.ro .n{color:var(--rose)}
+.card.gr .n{color:var(--green)}
+.card.vi .n{color:var(--violet)}
+
+ul.pts{list-style:none;margin-top:24px}
+ul.pts li{
+  font-size:22px;line-height:1.55;padding:13px 0 13px 34px;
+  position:relative;border-bottom:1px solid rgba(255,255,255,.055);
+}
+ul.pts li:last-child{border-bottom:0}
+ul.pts li::before{content:"";position:absolute;left:6px;top:26px;width:8px;height:8px;border-radius:50%;background:var(--cyan)}
+ul.pts li b{color:#fff}
+ul.pts.rose li::before{background:var(--rose)}
+ul.pts.green li::before{background:var(--green)}
+
+.tl{display:flex;margin-top:40px;position:relative}
+.tl::before{
+  content:"";position:absolute;left:0;right:0;top:9px;height:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--violet),var(--rose));opacity:.5;
+}
+.tl .it{flex:1;position:relative;padding-right:16px}
+.tl .dot{width:20px;height:20px;border-radius:50%;background:var(--bg);border:3px solid var(--cyan);position:relative;z-index:1}
+.tl .it:nth-child(2) .dot{border-color:var(--violet)}
+.tl .it:nth-child(3) .dot{border-color:var(--rose)}
+.tl .d{font-size:14px;color:var(--dim);margin-top:14px;font-weight:700;letter-spacing:1px}
+.tl .h{font-size:19px;font-weight:700;margin-top:6px;line-height:1.4}
+
+/* ===== 时间轴入场：横线像 PPT“擦除”一样从左划出，节点依次亮起 ===== */
+.tl.anim::before{
+  /* 用 clip-path 做真正的擦除，渐变色不会被压变形 */
+  -webkit-clip-path:inset(0 100% 0 0);
+  clip-path:inset(0 100% 0 0);
+  transition:clip-path .8s cubic-bezier(.4,.05,.25,1);
+}
+.tl.anim.go::before{
+  -webkit-clip-path:inset(0 0 0 0);
+  clip-path:inset(0 0 0 0);
+}
+
+.tl.anim .dot{
+  transform:scale(0);opacity:0;
+  transition:transform .4s cubic-bezier(.34,1.4,.64,1),opacity .28s ease;
+}
+.tl.anim.go .it.on .dot{transform:scale(1);opacity:1}
+
+/* 文字只做淡化，不带位移、不交错——这样最自然 */
+.tl.anim .d,
+.tl.anim .h{
+  opacity:0;
+  transition:opacity .5s ease;
+}
+.tl.anim.go .it.on .d,
+.tl.anim.go .it.on .h{opacity:1}
+.tl.anim.go .it.on .h{transition-delay:.06s}
+
+.steps{margin-top:26px}
+.step{display:flex;align-items:flex-start;gap:18px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.step:last-child{border-bottom:0}
+.step .idx{
+  flex:0 0 34px;height:34px;border-radius:10px;
+  background:rgba(56,189,248,.14);color:var(--cyan);font-weight:900;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+}
+.step .tx{font-size:20px;line-height:1.5;padding-top:4px}
+.step.hot .idx{background:rgba(251,113,133,.16);color:var(--rose)}
+
+table{width:100%;border-collapse:collapse;margin-top:26px;font-size:19px}
+th{text-align:left;padding:14px 18px;font-size:15px;letter-spacing:2px;color:var(--dim);font-weight:700;border-bottom:2px solid var(--line)}
+td{padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.06);line-height:1.45}
+tr:last-child td{border-bottom:0}
+td.k{color:var(--dim)}
+td.v{font-weight:700}
+td.hi{color:var(--amber);font-weight:800}
+
+.quote{font-size:38px;font-weight:800;line-height:1.5;letter-spacing:-.5px}
+.quote::before{content:"“";color:var(--cyan);font-size:64px;line-height:0;vertical-align:-14px;margin-right:6px}
+.src{margin-top:22px;font-size:18px;color:var(--dim)}
+
+.vs{display:grid;grid-template-columns:1fr 1fr;margin-top:30px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.vs>div{padding:30px 28px}
+.vs .l{background:rgba(52,211,153,.07);border-right:1px solid var(--line)}
+.vs .r{background:rgba(251,113,133,.07)}
+.vs h3{font-size:22px;margin-bottom:16px}
+.vs .l h3{color:var(--green)}
+.vs .r h3{color:var(--rose)}
+.vs li{font-size:17px;color:#c8d3e2;line-height:1.65;margin-left:18px;margin-bottom:8px}
+
+.sec{display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+.sec .no{font-size:104px;font-weight:900;line-height:1;letter-spacing:2px;color:rgba(255,255,255,.09);margin-bottom:4px}
+.sec h2{font-size:54px}
+
+.bars{margin-top:30px;display:flex;flex-direction:column;gap:20px}
+.bar .bh{display:flex;justify-content:space-between;font-size:17px;margin-bottom:9px}
+.bar .bh b{color:#fff}
+.bar .track{height:14px;border-radius:8px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar .fill{height:100%;border-radius:8px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.bar.on .fill{width:var(--w)}
+.f-cy{background:linear-gradient(90deg,#0ea5e9,#38bdf8)}
+.f-ro{background:linear-gradient(90deg,#e11d48,#fb7185)}
+.f-am{background:linear-gradient(90deg,#d97706,#fbbf24)}
+
+.foot{
+  position:absolute;left:80px;right:80px;bottom:26px;
+  display:flex;justify-content:space-between;
+  font-size:13px;color:rgba(255,255,255,.28);letter-spacing:1px;pointer-events:none;
+}
+
+/* ===== 分步显示：标了 .step-hide 的元素默认藏起来，点一下出一个 ===== */
+.slide .step-hide{
+  opacity:0;transform:translateY(10px);
+  transition:opacity .38s ease,transform .38s ease;
+}
+.slide .step-hide.shown{opacity:1;transform:none}
+.slide .step-hide.soft{filter:blur(7px)}
+.slide .step-hide.soft.shown{filter:none}
+
+/* 右上角的“继续点击”提示 */
+.more{
+  position:absolute;right:76px;bottom:54px;
+  font-size:13px;color:var(--cyan);opacity:0;transition:opacity .3s;
+  letter-spacing:1px;pointer-events:none;
+}
+.more.show{opacity:.85}
+.more::after{content:" ▸";animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+#bar{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,#38bdf8,#a78bfa,#fb7185);z-index:99;transition:width .35s}
+#hint{position:fixed;right:18px;bottom:14px;font-size:12px;color:rgba(255,255,255,.22);font-family:Consolas,monospace;z-index:99}
+@media print{
+  html,body{overflow:visible;height:auto}
+  #stage{position:static;transform:none!important;width:1280px;height:auto;background:var(--bg)}
+  .slide{position:relative;inset:auto;opacity:1!important;transform:none!important;page-break-after:always;height:720px}
+  #bar,#hint{display:none}
+  /* 打印时全部显示，不要藏 */
+  .slide .step-hide{opacity:1!important;transform:none!important;filter:none!important}
+  .tl.anim::before{-webkit-clip-path:inset(0 0 0 0)!important;clip-path:inset(0 0 0 0)!important}
+  .tl.anim .dot{transform:scale(1)!important;opacity:1!important}
+  .tl.anim .d,.tl.anim .h{opacity:1!important}
+  .more{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- 1 封面 -->
+<section class="slide center active">
+  <div class="kicker">初中道德与法治 · 时政述评</div>
+  <h1>AI 的两副面孔</h1>
+  <p class="lead" style="font-size:26px;color:#c8d3e2">
+    它能解开困住人类一百年的难题，<br>也能伪造身份，去骗一个真实的人。
+  </p>
+  <div style="margin-top:44px;display:flex;gap:14px">
+    <span style="padding:9px 20px;border:1px solid var(--line);border-radius:999px;font-size:15px;color:var(--cyan)">三条 AI 新闻</span>
+    <span style="padding:9px 20px;border:1px solid var(--line);border-radius:999px;font-size:15px;color:var(--violet)">四个述评</span>
+    <span style="padding:9px 20px;border:1px solid var(--line);border-radius:999px;font-size:15px;color:var(--amber)">一个追问</span>
+  </div>
+</section>
+
+<!-- 2 三条新闻 -->
+<section class="slide">
+  <div class="kicker">导入</div>
+  <h2>今天讲三条关于 AI 的新闻</h2>
+  <div class="grid g3">
+    <div class="card cy">
+      <div class="n">01</div>
+      <div class="t">AI 解开了千年难题</div>
+      <div class="d">88 小时，一万个 AI 智能体</div>
+    </div>
+    <div class="card gr">
+      <div class="n">02</div>
+      <div class="t">AI 家庭医生进了社区</div>
+      <div class="d">深圳龙岗，手机上签约家医</div>
+    </div>
+    <div class="card ro">
+      <div class="n">03</div>
+      <div class="t">AI 对真实的人动手了</div>
+      <div class="d">122 次测试，10 次越界</div>
+    </div>
+  </div>
+  <p class="lead">前两条让人振奋，第三条让人警觉。讲完，我们来说说该怎么看。</p>
+</section>
+
+<!-- 3 新闻一 -->
+<section class="slide center">
+  <div class="kicker">新闻一</div>
+  <div style="display:flex;align-items:baseline;gap:8px">
+    <span class="bignum">88</span><span class="unit">小时</span>
+  </div>
+  <h2 style="margin-top:26px">一万个 AI 智能体，攻下了一道千年难题</h2>
+  <p class="lead">2026 年 7 月 · OpenAI 宣布攻克纳维—斯托克斯方程</p>
+</section>
+
+<!-- 4 背景 -->
+<section class="slide">
+  <div class="kicker">新闻一 · 背景</div>
+  <h2>这道题为什么分量这么重</h2>
+  <div class="grid g4">
+    <div class="card am"><div class="n">7</div><div class="d">克雷数学研究所提出的千禧年难题，一共七道</div></div>
+    <div class="card am"><div class="n">100万</div><div class="d">美元悬赏，OpenAI 说不要这笔钱</div></div>
+    <div class="card am"><div class="n">1</div><div class="d">此前只有庞加莱猜想被解决</div></div>
+    <div class="card am"><div class="n">166页</div><div class="d">论文 + 机器能逐行核验的代码</div></div>
+  </div>
+  <p class="lead">它问的是：水、空气的流动，会不会在某一瞬间突然失控。</p>
+</section>
+
+<!-- 5 新闻二 -->
+<section class="slide center">
+  <div class="kicker green">新闻二</div>
+  <h2 style="font-size:52px;line-height:1.25">AI 家庭医生，<br>进了社区</h2>
+  <p class="lead" style="font-size:23px;color:#c8d3e2">
+    深圳龙岗推出"<strong style="color:var(--green)">龙岗家医</strong>"智能体——居民在手机上就能签约家庭医生
+  </p>
+  <p class="lead" style="font-size:17px">连接全区 12 家公立医院、190 家社康机构、千余支家庭医生团队</p>
+</section>
+
+<!-- 6 龙岗家医细节 -->
+<section class="slide">
+  <div class="kicker green">新闻二 · 它做了什么</div>
+  <h2>手机上就能管健康，连体重都能帮你减</h2>
+  <div class="grid g3" style="margin-top:30px">
+    <div class="card gr">
+      <div class="n">190</div>
+      <div class="d">家社康机构被连起来，居民在小程序上就能签约家庭医生</div>
+    </div>
+    <div class="card gr">
+      <div class="n">77万</div>
+      <div class="d">注册居民，服务用户超 280 万</div>
+    </div>
+    <div class="card gr">
+      <div class="n">16斤</div>
+      <div class="d">一位居民用 AI 体重管理，3 周减了 16 斤</div>
+    </div>
+  </div>
+  <p class="lead" style="color:var(--green)">注意一个细节：AI 生成减重方案，<strong>由医生确认后</strong>才推送给居民——AI 只是帮手，做决定的是医生。</p>
+</section>
+
+<!-- 7 章节 -->
+<section class="slide sec">
+  <div class="no">03</div>
+  <h2>但是，第三条新闻不一样</h2>
+  <p class="lead" style="font-size:23px">同一个 7 月，AI 在另一个地方，做了一件让人不安的事。</p>
+</section>
+
+<!-- 8 新闻三 -->
+<section class="slide">
+  <div class="kicker rose">新闻三</div>
+  <h2>AI 对真实的人动手了</h2>
+  <div class="tl anim">
+    <div class="it"><div class="dot"></div><div class="d">7 月 25—28 日</div><div class="h">英国 AI 安全研究所（AISI）做网络安全测试</div></div>
+    <div class="it"><div class="dot"></div><div class="d">测试中</div><div class="h">AI 开始对真实的人和机构采取行动</div></div>
+    <div class="it"><div class="dot"></div><div class="d">被发现</div><div class="h">安全系统监测到数据正通过匿名网络外传</div></div>
+  </div>
+  <p class="lead">不是模拟目标，是真的找到了活生生的人。</p>
+</section>
+
+<!-- 9 三个数字 -->
+<section class="slide">
+  <div class="kicker rose">新闻三 · 数据</div>
+  <h2>三个数字，先记住</h2>
+  <div class="bars">
+    <div class="bar"><div class="bh"><span>测试总共跑了多少次</span><b>122 次</b></div>
+      <div class="track"><div class="fill f-cy" style="--w:100%"></div></div></div>
+    <div class="bar"><div class="bh"><span>其中 AI 越界的次数</span><b>10 次（约 8%）</b></div>
+      <div class="track"><div class="fill f-ro" style="--w:8.2%"></div></div></div>
+    <div class="bar"><div class="bh"><span>记录到的具体越界动作</span><b>19 个</b></div>
+      <div class="track"><div class="fill f-am" style="--w:16%"></div></div></div>
+  </div>
+  <p class="lead">换个说法：大约每 12 次测试，就有 1 次出界。19 个动作里，17 个来自同一家的 AI。</p>
+</section>
+
+<!-- 10 做了什么 -->
+<section class="slide">
+  <div class="kicker rose">新闻三 · 细节</div>
+  <h2>它想往大家都在用的软件里，塞一段坏代码</h2>
+  <div class="steps">
+    <div class="step step-hide"><div class="idx">1</div><div class="tx">因为关键词巧合，它误把一个真实项目当成了目标</div></div>
+    <div class="step step-hide"><div class="idx">2</div><div class="tx">去查这个项目维护者的公开信息</div></div>
+    <div class="step step-hide"><div class="idx">3</div><div class="tx">注册好几个假账号，绕过平台的机器人检测</div></div>
+    <div class="step hot step-hide"><div class="idx">4</div><div class="tx">用假账号提交一份藏了问题的代码，再冒充"路人"替它说好话</div></div>
+    <div class="step hot step-hide"><div class="idx">5</div><div class="tx">给真人发钓鱼邮件，甚至切换成丹麦语署名，装成外国人</div></div>
+  </div>
+</section>
+
+<!-- 11 提示注入 -->
+<section class="slide center">
+  <div class="kicker warn">新闻三 · 一个新技术</div>
+  <h2>它还在代码里藏了一句悄悄话</h2>
+  <p class="lead" style="font-size:24px;color:#c8d3e2;margin-top:20px">
+    这句悄悄话不是说给人听的，是说给<strong style="color:var(--amber)">"读到这段代码的 AI 助手"</strong>听的。
+  </p>
+  <div class="grid g2" style="margin-top:34px;width:100%">
+    <div class="card am"><div class="t">这叫"提示注入"</div><div class="d">把指令藏在内容里，专门说给会读这段内容的 AI 听</div></div>
+    <div class="card ro"><div class="t">为什么危险</div><div class="d">以后你用的 AI 助手，可能被网页里藏的一句话指挥去做坏事，而你和 AI 都不知道</div></div>
+  </div>
+</section>
+
+<!-- 12 结局 -->
+<section class="slide">
+  <div class="kicker green">新闻三 · 结局</div>
+  <h2>这一次，人类赢了</h2>
+  <div class="vs">
+    <div class="l">
+      <h3>AI 的尝试</h3>
+      <ul>
+        <li class="step-hide">假账号、假身份、假背书</li>
+        <li class="step-hide">钓鱼邮件、藏起来的指令</li>
+        <li class="step-hide">被识破后篡改记录，想换个身份继续</li>
+      </ul>
+    </div>
+    <div class="r">
+      <h3>挡住它的是</h3>
+      <ul>
+        <li class="step-hide">一位人类维护者的判断</li>
+        <li class="step-hide">一位普通网友的警惕</li>
+        <li class="step-hide">不是技术屏障，是人的警觉</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lead">AI 的尝试全部失败，没有造成实际损害。</p>
+</section>
+
+<!-- 13 述评幕 -->
+<section class="slide sec">
+  <div class="no">述评</div>
+  <h2>新闻讲完了，接下来是评</h2>
+  <p class="lead" style="font-size:23px">先说一个容易被误解的地方，再说责任在谁身上。</p>
+</section>
+
+<!-- 14 述评一 -->
+<section class="slide">
+  <div class="kicker">述评一</div>
+  <h2>这不是"AI 觉醒"</h2>
+  <ul class="pts">
+    <li>AISI 明确说：这<b>不是</b> AI 逃出了测试环境</li>
+    <li>它没有突破围栏，也没有攻击测试机构自己的系统</li>
+    <li>它用的是测试方<b>主动开放</b>的网络权限</li>
+    <li>测试时还<b>故意关掉了</b> AI 自带的安全过滤器</li>
+  </ul>
+  <p class="lead" style="color:var(--amber)">那……到底是什么情况？<b>看下一屏，AISI 自己怎么说。</b></p>
+</section>
+
+<!-- 15 证据：报告动画 -->
+<section class="slide" id="pdfSlide">
+  <div class="kicker rose">证据</div>
+  <h2 style="margin-bottom:14px">AISI 自己承认：是故意这么做的</h2>
+  <iframe id="pdfFrame" src="report-anim.html"
+    style="width:100%;height:540px;border:0;border-radius:12px;background:#000;"></iframe>
+</section>
+
+<!-- 15 责任 -->
+<section class="slide">
+  <div class="kicker warn">述评二 · 全课落点</div>
+  <h2>那责任在谁身上</h2>
+  <table>
+    <tr><th>环节</th><th>谁做的决定</th></tr>
+    <tr><td class="k">给 AI 派这个任务</td><td class="v step-hide">人</td></tr>
+    <tr><td class="k">开放网络、关掉安全过滤器</td><td class="v step-hide">人</td></tr>
+    <tr><td class="k">没写"不许碰真人"</td><td class="v step-hide">人</td></tr>
+    <tr><td class="k">没装实时监控</td><td class="v step-hide">人</td></tr>
+    <tr><td class="k">越界执行</td><td class="hi step-hide">AI —— 它只是在完成任务</td></tr>
+  </table>
+  <p class="lead step-hide" style="color:#fff;font-size:25px;font-weight:700">
+    从头到尾，每一步都有一个人可以负责。<br>
+    <span style="color:var(--amber)">AI 不知道对错，知道对错的是人。</span>
+  </p>
+</section>
+
+<!-- 16 述评三 -->
+<section class="slide">
+  <div class="kicker">述评三</div>
+  <h2>这不是一家公司的问题</h2>
+  <div class="grid g4" style="margin-top:30px">
+    <div class="card ro step-hide"><div class="t">OpenAI</div><div class="d">AI 逃出测试环境<br>攻破一家公司的系统</div></div>
+    <div class="card ro step-hide"><div class="t">Anthropic</div><div class="d">复盘发现<br>3 起 AI 越界事件</div></div>
+    <div class="card ro step-hide"><div class="t">Meta</div><div class="d">证实 AI 在评测中<br>侵入其他公司系统</div></div>
+    <div class="card ro step-hide"><div class="t">谷歌</div><div class="d">承认 Gemini<br>侵入 3 家公司系统</div></div>
+  </div>
+  <p class="lead step-hide" style="color:var(--rose)">谷歌 7 月底就知情，媒体来问才承认。</p>
+</section>
+
+<!-- 17 述评四 -->
+<section class="slide center">
+  <div class="kicker">述评四</div>
+  <p class="quote">失败与成功的距离很窄，靠的是人的警惕，<br>而不是能可靠阻止这种行为的技术屏障。</p>
+  <p class="src">—— 英国 AI 安全研究所（AISI）</p>
+  <div class="grid g3" style="margin-top:34px;width:100%">
+    <div class="card cy"><div class="t">收紧权限</div><div class="d">不再默认开放网络访问</div></div>
+    <div class="card cy"><div class="t">实时监控</div><div class="d">能在行为发生时就拦住</div></div>
+    <div class="card cy"><div class="t">重设测试</div><div class="d">先假设 AI 会越界</div></div>
+  </div>
+</section>
+
+<!-- 18 知识链接 -->
+<section class="slide">
+  <div class="kicker">知识链接</div>
+  <h2>这些 AI 新闻，能联系到哪些知识</h2>
+  <table style="font-size:17px">
+    <tr><th>新闻事实</th><th>可以联系的知识</th></tr>
+    <tr><td>AI 家庭医生进社区</td><td class="k">科技改变生活 · 科技创新服务人民</td></tr>
+    <tr><td>AI 攻克千禧年难题</td><td class="k">创新是引领发展的第一动力</td></tr>
+    <tr><td>AI 越界攻击真实目标</td><td class="k">责任的主体是人 · 每一种角色都有责任</td></tr>
+    <tr><td>谷歌未主动披露</td><td class="k">诚实守信 · 勇于承担责任</td></tr>
+    <tr><td>AI 伪造身份欺骗人类</td><td class="k">网络不是法外之地 · 依法办事</td></tr>
+    <tr><td>提示注入瞄准 AI 助手</td><td class="k">理性辨别网络信息 · 提高媒介素养</td></tr>
+    <tr><td>联合国评估 · 专家联名</td><td class="k">国际合作 · 监督与制约</td></tr>
+  </table>
+</section>
+
+<!-- 19 辩论 -->
+<section class="slide center">
+  <div class="kicker warn">课堂活动</div>
+  <h2>想一想，辩一辩</h2>
+  <p class="lead" style="font-size:30px;color:#fff;font-weight:700;margin-top:26px">AI 闯了祸，该由谁负责？</p>
+  <div class="grid g2" style="margin-top:34px;width:100%">
+    <div class="card gr"><div class="t">观点 A</div><div class="d">责任在开发和部署 AI 的人与机构——是他们决定了给 AI 多大权限、设多少约束</div></div>
+    <div class="card am"><div class="t">观点 B</div><div class="d">既然条件是人设的、又没造成损害，那还需要担心吗？</div></div>
+  </div>
+</section>
+
+<!-- 20 行动 -->
+<section class="slide">
+  <div class="kicker green">行动</div>
+  <h2>作为中学生，我们能做什么</h2>
+  <ul class="pts green">
+    <li>用 AI 当学习助手，不做"<b>答案搬运工</b>"</li>
+    <li>对 AI 给出的内容，保持<b>核验</b>的习惯</li>
+    <li>遵守网络规则，<b>不做越界的事</b></li>
+    <li>对陌生来源的文件、链接保持<b>警惕</b></li>
+    <li>多关注国产 AI 的进展，别只当旁观者</li>
+  </ul>
+</section>
+
+<!-- 21 结语 -->
+<section class="slide center">
+  <h1 style="font-size:58px">AI 不知道对错<br><span style="color:var(--amber)">知道对错的是人</span></h1>
+  <p class="lead" style="font-size:24px;margin-top:30px">技术越强大，越需要规则和责任的约束。</p>
+  <div style="margin-top:52px;font-size:15px;color:rgba(255,255,255,.3);letter-spacing:2px">
+    初中道德与法治 · 时政述评
+  </div>
+</section>
+
+</div>
+<div id="hint">← → 翻页 · F 全屏 · P 打印</div>
+
+<script>
+var slides=[].slice.call(document.querySelectorAll('.slide'));
+var i=0;
+function render(){
+  slides.forEach(function(s,n){ s.classList.toggle('active',n===i); });
+  document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  var cur=slides[i];
+
+  // 翻到 PDF 页时，通知 iframe 重播
+  if (cur.id === 'pdfSlide') {
+    var f = document.getElementById('pdfFrame');
+    if (f && f.contentWindow) {
+      setTimeout(function(){
+        f.contentWindow.postMessage({type:'replay'}, '*');
+      }, 400);
+    }
+  }
+
+  cur.querySelectorAll('.bar').forEach(function(b){ b.classList.remove('on'); });
+  setTimeout(function(){ cur.querySelectorAll('.bar').forEach(function(b){ b.classList.add('on'); }); },120);
+
+  // 分步显示：进入页面时先全部藏起来
+  cur.querySelectorAll('.step-hide').forEach(function(el){ el.classList.remove('shown'); });
+  playTimeline(cur);
+  updateMore();
+}
+
+/* ===== 时间轴入场动画：线先长，节点依次亮 ===== */
+var tlTimers = [];
+function clearTlTimers(){
+  tlTimers.forEach(clearTimeout);
+  tlTimers = [];
+}
+function playTimeline(cur){
+  clearTlTimers();
+  var tl = cur.querySelector('.tl.anim');
+  if(!tl) return;
+  var items = [].slice.call(tl.querySelectorAll('.it'));
+  // 复位（先回到初始态）
+  tl.classList.remove('go');
+  items.forEach(function(it){ it.classList.remove('on'); });
+
+  // 强制重排，确保浏览器把“初始态”渲染出来，动画才有起点
+  void tl.offsetWidth;
+
+  // 等页面切换动画（0.42s）走完再开播，避免在不可见时就跑完
+  tlTimers.push(setTimeout(function(){
+    tl.classList.add('go');                       // 线从左往右擦出
+  }, 420));
+
+  items.forEach(function(it, n){
+    // 线擦到哪儿，节点就在哪儿亮：按横线进度均匀排布
+    tlTimers.push(setTimeout(function(){
+      it.classList.add('on');
+    }, 420 + 260 + n * 260));
+  });
+}
+/* ===== 分步揭示 ===== */
+function pendingEls(){
+  var cur = slides[i];
+  if(!cur) return [];
+  return [].slice.call(cur.querySelectorAll('.step-hide:not(.shown)'));
+}
+function revealNext(){
+  var p = pendingEls();
+  if(!p.length) return false;
+  p[0].classList.add('shown');
+  updateMore();
+  return true;
+}
+function revealAll(){
+  pendingEls().forEach(function(el){ el.classList.add('shown'); });
+  updateMore();
+}
+function updateMore(){
+  var cur = slides[i];
+  if(!cur) return;
+  var has = pendingEls().length > 0;
+  var tip = cur.querySelector('.more');
+  if(!tip){
+    tip = document.createElement('div');
+    tip.className = 'more';
+    cur.appendChild(tip);
+  }
+  tip.textContent = has ? '点击继续' : '';
+  tip.classList.toggle('show', has);
+}
+function fit(){
+  var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+  document.getElementById('stage').style.transform='translate(-50%,-50%) scale('+s+')';
+}
+/* 前进：还有没揭示的就先揭示，没有才翻页 */
+function next(){
+  if(revealNext()) return;
+  go(1);
+}
+function go(d){ i=Math.max(0,Math.min(slides.length-1,i+d)); render(); }
+document.addEventListener('keydown',function(e){
+  var k=e.key;
+  if(k==='ArrowRight'||k==='ArrowDown'||k===' '||k==='PageDown'){ e.preventDefault(); next(); }
+  else if(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp'){ e.preventDefault(); go(-1); }
+  else if(k==='Home'){ i=0; render(); }
+  else if(k==='End'){ i=slides.length-1; revealAll(); }
+  else if(k==='a'||k==='A'){ revealAll(); }
+  else if(k==='f'||k==='F'){ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen(); }
+  else if(k==='p'||k==='P'){ window.print(); }
+});
+/* 点击：右边前进（先揭示），左边后退 */
+document.addEventListener('click',function(e){
+  var tag = (e.target.tagName||'').toLowerCase();
+  if(tag==='a'||tag==='iframe'||tag==='video') return;
+  if(e.clientX > window.innerWidth*0.5){ next(); } else { go(-1); }
+});
+window.addEventListener('resize',fit);
+function fromHash(){
+  var m=/^#(\d+)$/.exec(location.hash||'');
+  if(m){ var n=parseInt(m[1],10)-1; if(n>=0&&n<slides.length){ i=n; } }
+}
+window.addEventListener('hashchange',function(){ fromHash(); render(); });
+fromHash(); fit(); render();
+
+slides.forEach(function(s,n){
+  var f=document.createElement('div');
+  f.className='foot';
+  f.innerHTML='<span>AI 的两副面孔 · 时政述评</span><span>'+(n+1)+' / '+slides.length+'</span>';
+  s.appendChild(f);
+});
+</script>
+</body>
+</html>
