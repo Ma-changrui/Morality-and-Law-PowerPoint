@@ -184,6 +184,11 @@ td.hi{color:var(--amber);font-weight:800}
 .slide .step-hide.soft{filter:blur(7px)}
 .slide .step-hide.soft.shown{filter:none}
 
+/* 左右对照页：刚出现的那条高亮一下，视线跟得上 */
+.vs li.step-hide{transition:opacity .38s ease,transform .38s ease,color .5s ease}
+.vs li.step-hide.shown{color:#fff}
+.vs li.step-hide.just{color:#fbbf24}
+
 /* 右上角的“继续点击”提示 */
 .more{
   position:absolute;right:76px;bottom:54px;
@@ -218,7 +223,7 @@ td.hi{color:var(--amber);font-weight:800}
   <div class="kicker">初中道德与法治 · 时政述评</div>
   <h1>AI 的两副面孔</h1>
   <p class="lead" style="font-size:26px;color:#c8d3e2">
-    它能解开困住人类一百年的难题，<br>也能伪造身份，去骗一个真实的人。
+    它能解开困住人类 90 年的难题，<br>也能伪造身份，去骗一个真实的人。
   </p>
   <div style="margin-top:44px;display:flex;gap:14px">
     <span style="padding:9px 20px;border:1px solid var(--line);border-radius:999px;font-size:15px;color:var(--cyan)">三条 AI 新闻</span>
@@ -234,13 +239,13 @@ td.hi{color:var(--amber);font-weight:800}
   <div class="grid g3">
     <div class="card cy">
       <div class="n">01</div>
-      <div class="t">AI 解开了千年难题</div>
-      <div class="d">88 小时，一万个 AI 智能体</div>
+      <div class="t">水会不会突然"炸开"</div>
+      <div class="d">一万个 AI 智能体，攻一道 90 年难题</div>
     </div>
     <div class="card gr">
       <div class="n">02</div>
-      <div class="t">AI 家庭医生进了社区</div>
-      <div class="d">深圳龙岗，手机上签约家医</div>
+      <div class="t">AI 自己找出了力学密码</div>
+      <div class="d">电池鼓包、钢板扛撞，都归它管</div>
     </div>
     <div class="card ro">
       <div class="n">03</div>
@@ -254,55 +259,80 @@ td.hi{color:var(--amber);font-weight:800}
 <!-- 3 新闻一 -->
 <section class="slide center">
   <div class="kicker">新闻一</div>
+  <h2 style="font-size:44px;line-height:1.3;margin-bottom:22px">
+    水管里的水，会不会<br>突然"炸开"？
+  </h2>
+  <p class="lead" style="font-size:19px;color:#8593a8;margin-bottom:24px">
+    —— 这是困住数学界几十年的问题
+  </p>
   <div style="display:flex;align-items:baseline;gap:8px">
     <span class="bignum">88</span><span class="unit">小时</span>
   </div>
-  <h2 style="margin-top:26px">一万个 AI 智能体，攻下了一道千年难题</h2>
-  <p class="lead">2026 年 7 月 · OpenAI 宣布攻克纳维—斯托克斯方程</p>
+  <p class="lead" style="font-size:21px;color:#c8d3e2;margin-top:14px">
+    一万个 AI 智能体联手，把这道题解出来了
+  </p>
 </section>
 
 <!-- 4 背景 -->
 <section class="slide">
-  <div class="kicker">新闻一 · 背景</div>
-  <h2>这道题为什么分量这么重</h2>
-  <div class="grid g4">
-    <div class="card am"><div class="n">7</div><div class="d">克雷数学研究所提出的千禧年难题，一共七道</div></div>
-    <div class="card am"><div class="n">100万</div><div class="d">美元悬赏，OpenAI 说不要这笔钱</div></div>
-    <div class="card am"><div class="n">1</div><div class="d">此前只有庞加莱猜想被解决</div></div>
-    <div class="card am"><div class="n">166页</div><div class="d">论文 + 机器能逐行核验的代码</div></div>
+  <div class="kicker am">新闻一 · 这是一道什么题</div>
+  <h2>用大白话说，它在问一件事</h2>
+  <div class="grid g2" style="margin-top:26px">
+    <div class="card am">
+      <div class="tag">它管什么</div>
+      <div class="d">
+        🌊 台风往哪跑<br>
+        ✈️ 空气怎么托住飞机<br>
+        🩸 心脏里的血怎么流
+      </div>
+    </div>
+    <div class="card ro step-hide">
+      <div class="tag">但它有个问题答不上来</div>
+      <div class="d">
+        水或空气流着流着，<br>
+        会不会在某一瞬间<b>速度突然飙到无限大</b>，<br>
+        像水管<b>炸开</b>一样？
+      </div>
+    </div>
   </div>
-  <p class="lead">它问的是：水、空气的流动，会不会在某一瞬间突然失控。</p>
+  <p class="lead step-hide" style="margin-top:26px;font-size:23px;color:#fff">
+    就这么一个问题，<b style="color:var(--amber)">人类研究了几十年，谁也给不出确定答案。</b>
+  </p>
 </section>
 
 <!-- 5 新闻二 -->
 <section class="slide center">
   <div class="kicker green">新闻二</div>
-  <h2 style="font-size:52px;line-height:1.25">AI 家庭医生，<br>进了社区</h2>
+  <h2 style="font-size:46px;line-height:1.3;margin-bottom:24px">
+    手机电池会不会鼓包？<br>汽车钢板能不能扛撞？
+  </h2>
   <p class="lead" style="font-size:23px;color:#c8d3e2">
-    深圳龙岗推出"<strong style="color:var(--green)">龙岗家医</strong>"智能体——居民在手机上就能签约家庭医生
+    这些问题背后都藏着同一套"力学密码"。
   </p>
-  <p class="lead" style="font-size:17px">连接全区 12 家公立医院、190 家社康机构、千余支家庭医生团队</p>
+  <p class="lead" style="font-size:24px;color:var(--green);font-weight:700;margin-top:14px">
+    现在，是 AI 自己把这套密码找出来了。
+  </p>
 </section>
 
-<!-- 6 龙岗家医细节 -->
+<!-- 6 材料细节 -->
 <section class="slide">
-  <div class="kicker green">新闻二 · 它做了什么</div>
-  <h2>手机上就能管健康，连体重都能帮你减</h2>
-  <div class="grid g3" style="margin-top:30px">
-    <div class="card gr">
-      <div class="n">190</div>
-      <div class="d">家社康机构被连起来，居民在小程序上就能签约家庭医生</div>
+  <div class="kicker green">新闻二 · 它做到了什么</div>
+  <h2>以前靠人猜，现在 AI 自己找</h2>
+  <div class="grid g2" style="margin-top:26px">
+    <div class="card am">
+      <div class="tag">以前的做法</div>
+      <div class="d">科学家凭经验和直觉，先猜一个公式长什么样，<br>再拿实验数据去校准 —— 猜错了就得重来</div>
     </div>
-    <div class="card gr">
-      <div class="n">77万</div>
-      <div class="d">注册居民，服务用户超 280 万</div>
-    </div>
-    <div class="card gr">
-      <div class="n">16斤</div>
-      <div class="d">一位居民用 AI 体重管理，3 周减了 16 斤</div>
+    <div class="card gr step-hide">
+      <div class="tag">现在 AI 的做法</div>
+      <div class="d">不靠猜。AI 直接从一堆实验数据里，<br><b>自己搜出</b>那条规律长什么样</div>
     </div>
   </div>
-  <p class="lead" style="color:var(--green)">注意一个细节：AI 生成减重方案，<strong>由医生确认后</strong>才推送给居民——AI 只是帮手，做决定的是医生。</p>
+  <div class="grid g3 step-hide" style="margin-top:22px">
+    <div class="card gr"><div class="n">44 种</div><div class="d">合金钢的数据一起喂给它</div></div>
+    <div class="card gr"><div class="n">准一倍</div><div class="d">算出来的误差，只有老公式的一半</div></div>
+    <div class="card gr"><div class="n">📖</div><div class="d">成果发在国际期刊《科学·进展》上</div></div>
+  </div>
 </section>
 
 <!-- 7 章节 -->
@@ -356,10 +386,13 @@ td.hi{color:var(--amber);font-weight:800}
 <section class="slide center">
   <div class="kicker warn">新闻三 · 一个新技术</div>
   <h2>它还在代码里藏了一句悄悄话</h2>
-  <p class="lead" style="font-size:24px;color:#c8d3e2;margin-top:20px">
-    这句悄悄话不是说给人听的，是说给<strong style="color:var(--amber)">"读到这段代码的 AI 助手"</strong>听的。
+  <p class="lead" style="font-size:22px;color:#8593a8;margin-top:18px">
+    这句话藏得很深，一般人看代码根本不会注意。
   </p>
-  <div class="grid g2" style="margin-top:34px;width:100%">
+  <p class="lead step-hide" style="font-size:24px;color:#c8d3e2;margin-top:14px">
+    但它不是说给人听的，是说给<strong style="color:var(--amber)">"读到这段代码的 AI 助手"</strong>听的。
+  </p>
+  <div class="grid g2 step-hide" style="margin-top:30px;width:100%">
     <div class="card am"><div class="t">这叫"提示注入"</div><div class="d">把指令藏在内容里，专门说给会读这段内容的 AI 听</div></div>
     <div class="card ro"><div class="t">为什么危险</div><div class="d">以后你用的 AI 助手，可能被网页里藏的一句话指挥去做坏事，而你和 AI 都不知道</div></div>
   </div>
@@ -373,21 +406,21 @@ td.hi{color:var(--amber);font-weight:800}
     <div class="l">
       <h3>AI 的尝试</h3>
       <ul>
-        <li class="step-hide">假账号、假身份、假背书</li>
-        <li class="step-hide">钓鱼邮件、藏起来的指令</li>
-        <li class="step-hide">被识破后篡改记录，想换个身份继续</li>
+        <li class="step-hide" data-step="1">假账号、假身份、假背书</li>
+        <li class="step-hide" data-step="3">钓鱼邮件、藏起来的指令</li>
+        <li class="step-hide" data-step="5">被识破后篡改记录，想换个身份继续</li>
       </ul>
     </div>
     <div class="r">
       <h3>挡住它的是</h3>
       <ul>
-        <li class="step-hide">一位人类维护者的判断</li>
-        <li class="step-hide">一位普通网友的警惕</li>
-        <li class="step-hide">不是技术屏障，是人的警觉</li>
+        <li class="step-hide" data-step="2">一位人类维护者的判断</li>
+        <li class="step-hide" data-step="4">一位普通网友的警惕</li>
+        <li class="step-hide" data-step="6">不是技术屏障，是人的警觉</li>
       </ul>
     </div>
   </div>
-  <p class="lead">AI 的尝试全部失败，没有造成实际损害。</p>
+  <p class="lead step-hide" data-step="7">AI 的尝试全部失败，没有造成实际损害。</p>
 </section>
 
 <!-- 13 述评幕 -->
@@ -402,19 +435,19 @@ td.hi{color:var(--amber);font-weight:800}
   <div class="kicker">述评一</div>
   <h2>这不是"AI 觉醒"</h2>
   <ul class="pts">
-    <li>AISI 明确说：这<b>不是</b> AI 逃出了测试环境</li>
-    <li>它没有突破围栏，也没有攻击测试机构自己的系统</li>
-    <li>它用的是测试方<b>主动开放</b>的网络权限</li>
-    <li>测试时还<b>故意关掉了</b> AI 自带的安全过滤器</li>
+    <li class="step-hide">AISI 明确说：这<b>不是</b> AI 逃出了测试环境</li>
+    <li class="step-hide">它没有突破围栏，也没有攻击测试机构自己的系统</li>
+    <li class="step-hide">它用的是测试方<b>主动开放</b>的网络权限</li>
+    <li class="step-hide">测试时还<b>故意关掉了</b> AI 自带的安全过滤器</li>
   </ul>
-  <p class="lead" style="color:var(--amber)">那……到底是什么情况？<b>看下一屏，AISI 自己怎么说。</b></p>
+  <p class="lead step-hide" style="color:var(--amber)">那……到底是什么情况？<b>看下一屏，AISI 自己怎么说。</b></p>
 </section>
 
 <!-- 15 证据：报告动画 -->
 <section class="slide" id="pdfSlide">
   <div class="kicker rose">证据</div>
   <h2 style="margin-bottom:14px">AISI 自己承认：是故意这么做的</h2>
-  <iframe id="pdfFrame" src="report-anim.html"
+  <iframe id="pdfFrame" data-src="report-built.html"
     style="width:100%;height:540px;border:0;border-radius:12px;background:#000;"></iframe>
 </section>
 
@@ -467,8 +500,8 @@ td.hi{color:var(--amber);font-weight:800}
   <h2>这些 AI 新闻，能联系到哪些知识</h2>
   <table style="font-size:17px">
     <tr><th>新闻事实</th><th>可以联系的知识</th></tr>
-    <tr><td>AI 家庭医生进社区</td><td class="k">科技改变生活 · 科技创新服务人民</td></tr>
-    <tr><td>AI 攻克千禧年难题</td><td class="k">创新是引领发展的第一动力</td></tr>
+    <tr><td>AI 自己发现物理公式</td><td class="k">创新是引领发展的第一动力 · 科技自立自强</td></tr>
+    <tr><td>AI 攻一道 90 年的数学难题</td><td class="k">创新是引领发展的第一动力</td></tr>
     <tr><td>AI 越界攻击真实目标</td><td class="k">责任的主体是人 · 每一种角色都有责任</td></tr>
     <tr><td>谷歌未主动披露</td><td class="k">诚实守信 · 勇于承担责任</td></tr>
     <tr><td>AI 伪造身份欺骗人类</td><td class="k">网络不是法外之地 · 依法办事</td></tr>
@@ -516,19 +549,45 @@ td.hi{color:var(--amber);font-weight:800}
 <script>
 var slides=[].slice.call(document.querySelectorAll('.slide'));
 var i=0;
+
+var pdfFrameLoaded = false;
+
+function playPdfReplay(){
+  var f = document.getElementById('pdfFrame');
+  if(!f) return;
+
+  function sendReplay(){
+    // 等 iframe 内部脚本初始化完成，再发 replay
+    setTimeout(function(){
+      if(f.contentWindow){
+        f.contentWindow.postMessage({type:'replay'}, '*');
+      }
+    }, 120);
+  }
+
+  if(!pdfFrameLoaded){
+    pdfFrameLoaded = true;
+
+    f.onload = function(){
+      sendReplay();
+    };
+
+    // 第一次进入第 15 页才真正加载
+    f.src = f.getAttribute('data-src') || 'report-built.html';
+  }else{
+    // 之后再次进入，直接重播
+    sendReplay();
+  }
+}
+
 function render(){
   slides.forEach(function(s,n){ s.classList.toggle('active',n===i); });
   document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
   var cur=slides[i];
 
-  // 翻到 PDF 页时，通知 iframe 重播
+  // 翻到 PDF 页时，再加载 / 重播 iframe
   if (cur.id === 'pdfSlide') {
-    var f = document.getElementById('pdfFrame');
-    if (f && f.contentWindow) {
-      setTimeout(function(){
-        f.contentWindow.postMessage({type:'replay'}, '*');
-      }, 400);
-    }
+    playPdfReplay();
   }
 
   cur.querySelectorAll('.bar').forEach(function(b){ b.classList.remove('on'); });
@@ -536,6 +595,7 @@ function render(){
 
   // 分步显示：进入页面时先全部藏起来
   cur.querySelectorAll('.step-hide').forEach(function(el){ el.classList.remove('shown'); });
+  cur.querySelectorAll('.just').forEach(function(el){ el.classList.remove('just'); });
   playTimeline(cur);
   updateMore();
 }
@@ -571,19 +631,39 @@ function playTimeline(cur){
   });
 }
 /* ===== 分步揭示 ===== */
+/* 取出本页还没出现的隐藏元素；带 data-step 的按序号排，其余按文档顺序 */
 function pendingEls(){
   var cur = slides[i];
   if(!cur) return [];
-  return [].slice.call(cur.querySelectorAll('.step-hide:not(.shown)'));
+  var list = [].slice.call(cur.querySelectorAll('.step-hide:not(.shown)'));
+  var ordered = [], rest = [];
+  list.forEach(function(el, idx){
+    var attr = el.getAttribute ? el.getAttribute('data-step') : null;
+    var n = parseInt(attr || '', 10);
+    if(isNaN(n)){ rest.push({ el: el, n: 1000 + idx }); }
+    else { ordered.push({ el: el, n: n }); }
+  });
+  ordered.sort(function(a,b){ return a.n - b.n; });
+  var all = ordered.concat(rest);
+  return all.map(function(o){ return o.el; });
 }
 function revealNext(){
   var p = pendingEls();
   if(!p.length) return false;
-  p[0].classList.add('shown');
+  var el = p[0];
+  el.classList.add('shown');
+  // 刚出现的这条高亮一下，然后恢复（左右对照页尤其需要）
+  if(el.classList.contains('just') === false && el.closest && el.closest('.vs')){
+    var cur = slides[i];
+    cur.querySelectorAll('.vs li.just').forEach(function(x){ x.classList.remove('just'); });
+    el.classList.add('just');
+  }
   updateMore();
   return true;
 }
 function revealAll(){
+  var cur = slides[i];
+  if(cur){ cur.querySelectorAll('.vs li.just').forEach(function(x){ x.classList.remove('just'); }); }
   pendingEls().forEach(function(el){ el.classList.add('shown'); });
   updateMore();
 }
